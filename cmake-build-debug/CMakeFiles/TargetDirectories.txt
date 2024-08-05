@@ -1,0 +1,3 @@
+C:/Users/ozgur/GitHub/zGr/cmake-build-debug/CMakeFiles/zGr.dir
+C:/Users/ozgur/GitHub/zGr/cmake-build-debug/CMakeFiles/edit_cache.dir
+C:/Users/ozgur/GitHub/zGr/cmake-build-debug/CMakeFiles/rebuild_cache.dir

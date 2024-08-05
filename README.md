@@ -1,2 +1,2 @@
 # zGr
-Custom Game Engine with C++ and OpenGL
+Custom Game Engine with C++ and Vulkan
