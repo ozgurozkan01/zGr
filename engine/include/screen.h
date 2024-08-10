@@ -12,16 +12,23 @@ namespace zgr
 {
     class screen {
     public:
+        /* Prevent copying the screen and posibility of dangling pointer */
+        screen(const screen&) = delete;
+        screen &operator=(const screen&) = delete;
+
         screen();
         ~screen();
-    private:
 
+        [[maybe_unused]] [[nodiscard]] bool should_close() const;
+
+    private:
         // Window Variables
         static constexpr uint16_t window_width = 480;
         static constexpr uint16_t window_height = 360;
         static constexpr std::string window_title = "ZGR ENGINE";
 
         [[maybe_unused]] bool init_window();
+
 
         GLFWwindow* window; // main screen window
     };

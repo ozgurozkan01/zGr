@@ -34,12 +34,14 @@ namespace zgr
          If you will be using Vulkan to render to a window, disable context creation by setting the GLFW_CLIENT_API hint to GLFW_NO_API
          */
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-        /* Disable the resizable of window */
+        /* Disable the resizability of window */
         glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
         window = glfwCreateWindow(window_width, window_height, window_title.c_str(), nullptr, nullptr);
 
         return true;
     }
+
+    bool screen::should_close() const { return glfwWindowShouldClose(window); }
 
 }
