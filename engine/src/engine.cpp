@@ -31,6 +31,8 @@ namespace zgr
     void engine::init()
     {
         engine_screen = new screen();
-        engine_pipeline = new graphic_pipeline("shaders/vertex_shader.vert.spv", "shaders/fragment_shader.frag.spv");
+        engine_pipeline = new graphic_pipeline(
+                "../shaders/vertex_shader.vert.spv",
+                "../shaders/fragment_shader.frag.spv");
     }
 }
