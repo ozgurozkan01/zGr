@@ -30,6 +30,9 @@ add_executable(
         3rdParty/imgui_file_dialog/file_dialog/ImGuiFileDialogConfig.h
         3rdParty/imgui_file_dialog/stb/stb_image.h
         3rdParty/imgui_file_dialog/stb/stb_image.c
+        # PROJECT CUSTOM CLASSES
+        scripts/editor/src/Launcher.cpp
+        scripts/editor/include/Launcher.h
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE opengl32 glfw3)
