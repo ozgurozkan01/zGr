@@ -1,23 +1,13 @@
-#include "engine/include/engine.h"
-#include <exception>
-#include <iostream>
+#include "scripts/editor/include/Launcher.h"
 
 int main()
 {
-    zgr::engine engine;
+    zgr::editor::Launcher launcher(840, 720, "zGr Game Engine");
 
-    try
+    while (!launcher.window_should_close())
     {
-        std::cout << "Engine is started!!\n";
-        engine.run();
-    }
-    catch (const std::exception& e)
-    {
-        std::cerr << "Engine throws error during start : " << e.what() << std::endl;
-        EXIT_FAILURE;
+        launcher.render();
     }
 
-    std::cout << "Engine shut down!!\n";
-
-    EXIT_SUCCESS;
+    return 0;
 }
