@@ -4,27 +4,35 @@
 
 #include "../include/Launcher.h"
 #include "../../../3rdParty/imgui/imgui_impl_opengl3.h"
-#include "../../../3rdParty/imgui_file_dialog/file_dialog/ImGuiFileDialog.h"
-#include "../../../3rdParty/imgui_file_dialog/stb/stb_image.h"
-#include <filesystem>
+#include "../../../3rdParty/stb/stb_image.h"
+#include "../../../3rdParty/fileDialog/ImGuiFileDialog.h"
+#include <regex>
 
 namespace zgr::editor
 {
     Launcher::Launcher(int x_res, int y_res, const char* w_name) :
-    x_resolution(x_res),
-    y_resolution(y_res),
-    window_name(w_name),
-    isBrowsing(false)
+            x_resolution(x_res),
+            y_resolution(y_res),
+            window_name(w_name),
+            file_browser("File Browser"),
+            project_name("NewProject"),
+            is_browsing(false),
+            is_wrong_name(false),
+            is_wrong_path(false),
+            is_path_exist(false),
+            is_project_created(false),
+            is_existed_project_open(false),
+            is_launcher_closed(false)
     {
         init();
     }
 
     Launcher::~Launcher()
     {
-        close();
+        destroy();
     }
 
-    void Launcher::close()
+    void Launcher::destroy()
     {
         ImGui_ImplOpenGL3_Shutdown();
         ImGui_ImplGlfw_Shutdown();
@@ -52,17 +60,15 @@ namespace zgr::editor
         ImGui_ImplOpenGL3_Init("#version 330");
 
         std::string parentPath = std::filesystem::current_path().parent_path().string();
-        strncpy(filePath, parentPath.c_str(), sizeof(filePath) - 1);
+        strncpy(project_path, parentPath.c_str(), sizeof(project_path) - 1);
 
-        image_ids[project_type::empty]        = load_texture("C:/Users/ozgur/GitHub/zGr/project_images/empty.png");
-        image_ids[project_type::first_person] = load_texture("C:/Users/ozgur/GitHub/zGr/project_images/first_person.png");
-        image_ids[project_type::third_person] = load_texture("C:/Users/ozgur/GitHub/zGr/project_images/third_person.jpeg");
+        templates.emplace_back(project_type::empty,        "Empty Project",        load_texture("C:/Users/ozgur/GitHub/zGr/templates/EmptyTemplate/icon.png"));
+        templates.emplace_back(project_type::first_person, "First Person Project", load_texture("C:/Users/ozgur/GitHub/zGr/templates/FirstPersonTemplate/icon.png"));
+        templates.emplace_back(project_type::third_person, "Third Person Project", load_texture("C:/Users/ozgur/GitHub/zGr/templates/ThirdPersonTemplate/icon.jpeg"));
     }
 
     void Launcher::render()
     {
-
-
         glfwPollEvents();
         // Resets and prepares the OpenGL3 related functions of ImGui.
         // This does all the background preparation necessary for ImGui to be able to draw with OpenGL3.
@@ -79,21 +85,21 @@ namespace zgr::editor
         ImGui::SetNextWindowSize(ImVec2(static_cast<float>(framebufferWidth), static_cast<float>(framebufferHeight)));
         ImGui::SetNextWindowPos(ImVec2(0, 0));
 
-
         // ImGui::ShowDemoWindow();
-        render_launch_default();
+        render_launcher_default_editor();
 
         switch (mode)
         {
-            case launcher_mode::new_project: render_new_project(); break;
-            case launcher_mode::open_project: render_open_project(); break;
+            case launcher_mode::new_project:
+                render_new_project_editor(); break;
+            case launcher_mode::open_project:
+                render_open_project_editor(); break;
         }
 
         ImGui::SetCursorScreenPos(ImVec2(x_resolution - 150, y_resolution - 75));
         if (ImGui::Button("Exit", ImVec2(100, 30)))
         {
-            std::cout << "Launcher Closed...\n";
-            exit(-1);
+            is_launcher_closed = true;
         }
 
         // Close the window
@@ -106,18 +112,9 @@ namespace zgr::editor
         glfwSwapBuffers(window);
     }
 
-    bool Launcher::window_should_close()
+    void Launcher::render_launcher_default_editor()
     {
-        return glfwWindowShouldClose(window);
-    }
-
-
-    void Launcher::render_launch_default()
-    {
-        ImGui::Begin("Launcher Editor");
-
-        ImGui::SetCursorScreenPos(ImVec2((x_resolution / 2) - 75, 20));
-        ImGui::Text("Project Launcher");
+        ImGui::Begin("Engine Launcher");
 
         ImGui::SetCursorScreenPos(ImVec2(x_resolution / 2 - 225, 50));
         if (ImGui::Button("Open Project", ImVec2(200, 40)))
@@ -136,23 +133,23 @@ namespace zgr::editor
         ImGui::SetCursorScreenPos(ImVec2(x_resolution - 400, y_resolution - 75));
         if (ImGui::Button("Browse", ImVec2(100, 30)))
         {
-            isBrowsing = true;
+            is_browsing = true;
         }
 
-        if (isBrowsing)
+        if (is_browsing)
         {
             render_file_browser();
         }
     }
 
-    void Launcher::render_new_project()
+    void Launcher::render_new_project_editor()
     {
         ImGui::SetCursorScreenPos(ImVec2(75, 150));
         ImGui::BeginChild("ProjectTypes", ImVec2(250, 400), true);
 
         for (int i = 0; i < IM_ARRAYSIZE(project_types); i++)
         {
-            if (ImGui::Selectable(project_type_enum_to_string(project_types[i]).c_str(), selected_project_type == i))
+            if (ImGui::Selectable(templates[i].name().c_str(), selected_project_type == i))
             {
                 selected_project_type = i;
             }
@@ -164,26 +161,50 @@ namespace zgr::editor
 
         ImGui::SetCursorScreenPos(ImVec2(335, 150));
         ImGui::BeginChild("ProjectPreview", ImVec2(400, 400), true);
-        ImGui::Image((void*)(intptr_t)image_ids[project_types[selected_project_type]], ImVec2(375, 375));
+        ImGui::Image((void*)(intptr_t)templates[selected_project_type].image_id(), ImVec2(375, 375));
         ImGui::EndChild();
-
-        ImGui::SetCursorScreenPos(ImVec2(x_resolution - 275, y_resolution - 75));
-        if (ImGui::Button("Create", ImVec2(100, 30)))
-        {
-        }
 
         ImGui::SetCursorScreenPos(ImVec2(100, y_resolution - 140));
         ImGui::Text("File Name:");
         ImGui::SameLine();
-        ImGui::InputText("##FileName", fileName, IM_ARRAYSIZE(fileName), ImGuiInputTextFlags_CharsNoBlank);
+        ImGui::InputText("##FileName", project_name, IM_ARRAYSIZE(project_name), ImGuiInputTextFlags_CharsNoBlank);
 
         ImGui::SetCursorScreenPos(ImVec2(100, y_resolution - 110));
         ImGui::Text("File Path:");
         ImGui::SameLine();
-        ImGui::InputText("##FilePath", filePath, IM_ARRAYSIZE(filePath), ImGuiInputTextFlags_CharsNoBlank);
+        ImGui::InputText("##FilePath", project_path, IM_ARRAYSIZE(project_path), ImGuiInputTextFlags_CharsNoBlank);
+
+        ImGui::SetCursorScreenPos(ImVec2(x_resolution - 275, y_resolution - 75));
+        if (ImGui::Button("Create", ImVec2(100, 30)) && can_create_project())
+        {
+            std::filesystem::create_directory(full_path);
+            is_project_created = true;
+        }
+
+        if (is_path_exist)
+        {
+            ImGui::SetCursorScreenPos(ImVec2(50, y_resolution - 25));
+            ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 0, 0, 255));
+            ImGui::Text("WARNING : This directory already exists!!");
+            ImGui::PopStyleColor();
+        }
+        if (is_wrong_path)
+        {
+            ImGui::SetCursorScreenPos(ImVec2(50, y_resolution - 50));
+            ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 0, 0, 255));
+            ImGui::Text("WARNING : Directory is not valid!!");
+            ImGui::PopStyleColor();
+        }
+        if (is_wrong_name)
+        {
+            ImGui::SetCursorScreenPos(ImVec2(50, y_resolution - 75));
+            ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 0, 0, 255));
+            ImGui::Text("WARNING : Invalid character(s) is used in project name");
+            ImGui::PopStyleColor();
+        }
     }
 
-    void Launcher::render_open_project()
+    void Launcher::render_open_project_editor()
     {
         ImGui::SetCursorScreenPos(ImVec2(75, 150));
         ImGui::BeginChild("Exist Projects", ImVec2(250, 400), true);
@@ -208,6 +229,7 @@ namespace zgr::editor
         ImGui::SetCursorScreenPos(ImVec2(x_resolution - 275, y_resolution - 75));
         if (ImGui::Button("Open", ImVec2(100, 30)))
         {
+            is_existed_project_open = true;
         }
     }
 
@@ -216,19 +238,16 @@ namespace zgr::editor
         IGFD::FileDialogConfig config;
         config.path = std::filesystem::current_path().parent_path().string();
 
-        ImGuiFileDialog::Instance()->OpenDialog("ChooseFileDlgKey", "Choose File", ".cpp,.h,.hpp", config);
+        ImGuiFileDialog::Instance()->OpenDialog(file_browser, "Choose Folder", nullptr, config);
 
-        if (ImGuiFileDialog::Instance()->Display("ChooseFileDlgKey"))
+        if (ImGuiFileDialog::Instance()->Display(file_browser))
         {
             if (ImGuiFileDialog::Instance()->IsOk())
             {
-                std::string newFilePath = ImGuiFileDialog::Instance()->GetFilePathName();
-                std::string newFileName = std::filesystem::path(newFilePath).filename().string();
+                selected_folder_path = ImGuiFileDialog::Instance()->GetCurrentPath();
+                strncpy(project_path, selected_folder_path.string().c_str(), sizeof(project_path) - 1);
 
-                std::cout << newFileName << std::endl;
-
-                strncpy(filePath, newFilePath.c_str(), sizeof(filePath) - 1);
-                strncpy(fileName, newFileName.c_str(), sizeof(fileName) - 1);
+                is_browsing = false;
             }
             ImGuiFileDialog::Instance()->Close();
         }
@@ -256,14 +275,16 @@ namespace zgr::editor
         return texture_id;
     }
 
-    std::string Launcher::project_type_enum_to_string(const project_type &type) const
+    bool Launcher::window_should_close()      { return glfwWindowShouldClose(window) || is_project_created || is_existed_project_open || is_launcher_closed; }
+    bool Launcher::is_project_name_validate() { return std::regex_match(project_name, std::regex("^[a-zA-Z0-9_]+$")); }
+    bool Launcher::is_project_path_validate() { return std::filesystem::is_directory(project_path); }
+    bool Launcher::is_project_path_exist()    { return std::filesystem::exists(full_path = std::string(project_path) + "\\" + project_name); }
+    bool Launcher::can_create_project()
     {
-        switch (type)
-        {
-            case project_type::empty:         return "Empty Project";
-            case project_type::third_person:  return "Third Person Project";
-            case project_type::first_person:  return "First Person Project";
-            default: return "";
-        }
+        if (!is_project_path_validate()) { is_wrong_path = true; }
+        if (!is_project_name_validate()) { is_wrong_name = true; }
+        if (is_project_path_exist())     { is_path_exist = true; }
+
+        return !is_wrong_path && !is_wrong_name && !is_path_exist;
     }
 }
