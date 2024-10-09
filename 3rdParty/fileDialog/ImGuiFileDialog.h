@@ -196,7 +196,7 @@ struct IGFD_Thumbnail_Info {
 #ifdef IMGUI_INCLUDE
 #include IMGUI_INCLUDE
 #else  // IMGUI_INCLUDE
-#include "../../imgui/imgui.h"
+#include "../imgui/imgui.h"
 #endif  // IMGUI_INCLUDE
 
 #include <set>
@@ -651,7 +651,7 @@ public:
     void SetDefaultFileName(const std::string& vFileName);
     bool SelectDirectory(const std::shared_ptr<FileInfos>& vInfos);  // enter directory
     void SelectAllFileNames();
-    void SelectFileName(const FileDialogInternal& vFileDialogInternal, const std::shared_ptr<FileInfos>& vInfos);            // add a filename in selection
+    void SelectFileName(const std::shared_ptr<FileInfos>& vInfos);            // add a filename in selection
     void SelectOrDeselectFileName(const FileDialogInternal& vFileDialogInternal, const std::shared_ptr<FileInfos>& vInfos);  // add/remove a filename in selection
     void SetCurrentDir(const std::string& vPath);                                                                            // define current directory for scan
     void ScanDir(const FileDialogInternal& vFileDialogInternal,

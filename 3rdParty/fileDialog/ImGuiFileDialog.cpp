@@ -84,8 +84,8 @@ SOFTWARE.
 #define PATH_SEP '/'
 #endif  // _IGFD_UNIX_
 
-#include "../../imgui/imgui.h"
-#include "../../imgui/imgui_internal.h"
+#include "../imgui/imgui.h"
+#include "../imgui/imgui_internal.h"
 
 // legacy compatibility 1.89
 #ifndef IM_TRUNC
@@ -2250,7 +2250,7 @@ void IGFD::FileManager::m_RemoveFileNameInSelection(const std::string& vFileName
     if (m_SelectedFileNames.size() == 1) {
         snprintf(fileNameBuffer, MAX_FILE_DIALOG_NAME_BUFFER, "%s", vFileName.c_str());
     } else {
-        snprintf(fileNameBuffer, MAX_FILE_DIALOG_NAME_BUFFER, "%zu files Selected", m_SelectedFileNames.size());
+        snprintf(fileNameBuffer, MAX_FILE_DIALOG_NAME_BUFFER, "%zu get_files Selected", m_SelectedFileNames.size());
     }
 }
 
@@ -2263,7 +2263,7 @@ void IGFD::FileManager::m_AddFileNameInSelection(const std::string& vFileName, b
     if (m_SelectedFileNames.size() == 1) {
         snprintf(fileNameBuffer, MAX_FILE_DIALOG_NAME_BUFFER, "%s", vFileName.c_str());
     } else {
-        snprintf(fileNameBuffer, MAX_FILE_DIALOG_NAME_BUFFER, "%zu files Selected", m_SelectedFileNames.size());
+        snprintf(fileNameBuffer, MAX_FILE_DIALOG_NAME_BUFFER, "%zu get_files Selected", m_SelectedFileNames.size());
     }
 
     if (vSetLastSelectionFileName) {
@@ -2425,7 +2425,7 @@ void IGFD::FileManager::SelectAllFileNames() {
     }
 }
 
-void IGFD::FileManager::SelectFileName(const FileDialogInternal& vFileDialogInternal, const std::shared_ptr<FileInfos>& vInfos) {
+void IGFD::FileManager::SelectFileName(const std::shared_ptr<FileInfos>& vInfos) {
     if (!vInfos.use_count()) {
         return;
     }
@@ -4081,7 +4081,10 @@ bool IGFD::FileDialog::m_DrawFooter() {
     if (m_FileDialogInternal.getDialogConfig().flags & ImGuiFileDialogFlags_ReadOnlyFileNameField) {
         flags |= ImGuiInputTextFlags_ReadOnly;
     }
-    if (ImGui::InputText("##FileName", fdFile.fileNameBuffer, MAX_FILE_DIALOG_NAME_BUFFER, flags)) {
+
+    char totalPath[50];
+    strncpy(totalPath, GetCurrentPath().c_str(), sizeof(totalPath) - 1);
+    if (ImGui::InputText("##FileName", totalPath , MAX_FILE_DIALOG_NAME_BUFFER, flags)) {
         m_FileDialogInternal.isOk = true;
     }
     if (ImGui::GetItemID() == ImGui::GetActiveID()) m_FileDialogInternal.fileInputIsActive = true;
